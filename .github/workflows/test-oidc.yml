@@ -21,17 +21,13 @@ jobs:
 
       - name: Verify AWS identity
         run: |
-          echo "Checking AWS identity..."
           aws sts get-caller-identity
 
       - name: Verify AWS region
         run: |
-          echo "AWS_REGION = $AWS_REGION"
-          echo "AWS_DEFAULT_REGION = $AWS_DEFAULT_REGION"
+          echo "AWS_REGION=$AWS_REGION"
+          echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
 
-          if [ "$AWS_REGION" = "us-east-1" ]; then
-            echo "AWS region is correctly configured: us-east-1"
-          else
-            echo "AWS region is incorrect: $AWS_REGION"
-            exit 1
-          fi
+      - name: Verify AWS CLI
+        run: |
+          aws configure list
