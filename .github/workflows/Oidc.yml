@@ -23,11 +23,7 @@ steps:
       aws-region: us-east-1
 
   - name: Verify AWS identity
-    run: |
-      echo "AWS identity:"
-      aws sts get-caller-identity
+    run: aws sts get-caller-identity
 
   - name: Verify AWS region
-    run: |
-      echo "AWS region:"
-      aws configure get region
+    run: aws configure get region
