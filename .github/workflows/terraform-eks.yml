@@ -1,20 +1,11 @@
 name: Terraform EKS
 
 on:
-#   pull_request:
-#     branches:
-#       - main
-
-#   push:
-#     branches:
-#       - main
-
   workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
-  pull-requests: write
 
 env:
   AWS_REGION: us-east-1
@@ -32,7 +23,7 @@ jobs:
       # Checkout
       # -----------------------------
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # -----------------------------
       # Setup Terraform
@@ -46,16 +37,21 @@ jobs:
       # Configure AWS using OIDC
       # -----------------------------
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
 
       # -----------------------------
-      # Verify AWS
+      # Verify AWS OIDC
       # -----------------------------
       - name: Verify AWS identity
         run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Branch: $GITHUB_REF"
+          echo "Event: $GITHUB_EVENT_NAME"
+
           aws sts get-caller-identity
 
       # -----------------------------
@@ -80,20 +76,10 @@ jobs:
       # Terraform Plan
       # -----------------------------
       - name: Terraform Plan
-        if: github.event_name == 'pull_request'
-        run: terraform plan -out=tfplan
-
-      # -----------------------------
-      # Terraform Plan for main
-      # -----------------------------
-      - name: Terraform Plan
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: terraform plan -out=tfplan
 
       # -----------------------------
       # Terraform Apply
-      # Only on main branch
       # -----------------------------
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: terraform apply -auto-approve tfplan
