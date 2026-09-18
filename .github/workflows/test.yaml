@@ -1,33 +1,51 @@
-name: Test AWS OIDC
+name: Terraform EKS Deployment
 
 on:
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
-  test-oidc:
-    name: Test AWS OIDC Connection
+  terraform:
+    name: Terraform
     runs-on: ubuntu-latest
 
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+
     steps:
-      - name: Checkout repository
+      # Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::827566277160:role/GitHubActionsClusterCreationRole
-          aws-region: us-east-1
+      # Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-      - name: Verify AWS identity
-        run: |
-          aws sts get-caller-identity
+      # Check Terraform formatting
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
 
-      - name: Verify AWS region
-        run: |
-          echo "AWS_REGION=$AWS_REGION"
-          echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
-          aws configure list
+      # Initialize Terraform
+      - name: Terraform Init
+        run: terraform init
+
+      # Validate configuration
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Create plan
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # Apply only on main branch
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan
