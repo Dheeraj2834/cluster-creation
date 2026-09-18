@@ -23,7 +23,11 @@ jobs:
           aws-region: us-east-1
 
       - name: Verify AWS identity
-        run: aws sts get-caller-identity
+        run: |
+          aws sts get-caller-identity
 
       - name: Verify AWS region
-        run: aws configure get region
+        run: |
+          echo "AWS_REGION=$AWS_REGION"
+          echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
+          aws configure list
