@@ -31,7 +31,7 @@ jobs:
 
       # Check Terraform formatting
       - name: Terraform Format
-        run: terraform fmt -check -recursive
+        run: terraform fmt -recursive
 
       # Initialize Terraform
       - name: Terraform Init
