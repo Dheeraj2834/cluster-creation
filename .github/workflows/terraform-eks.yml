@@ -3,6 +3,7 @@ name: Terraform EKS
 on:
   workflow_dispatch:
 
+# Required for GitHub OIDC
 permissions:
   id-token: write
   contents: read
@@ -14,72 +15,87 @@ env:
 jobs:
 
   terraform:
-    name: Terraform
+    name: Terraform EKS
     runs-on: ubuntu-latest
 
     steps:
 
-      # -----------------------------
-      # Checkout
-      # -----------------------------
+      # ==========================================
+      # 1. Checkout repository
+      # ==========================================
       - name: Checkout
         uses: actions/checkout@v5
 
-      # -----------------------------
-      # Setup Terraform
-      # -----------------------------
+      # ==========================================
+      # 2. Install Terraform
+      # ==========================================
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      # -----------------------------
-      # Configure AWS using OIDC
-      # -----------------------------
+      # ==========================================
+      # 3. Configure AWS using GitHub OIDC
+      # ==========================================
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::827566277160:role/OIDC
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GitHubActions-${{ github.run_id }}
 
-      # -----------------------------
-      # Verify AWS OIDC
-      # -----------------------------
+      # ==========================================
+      # 4. Verify AWS OIDC authentication
+      # ==========================================
       - name: Verify AWS identity
         run: |
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Branch: $GITHUB_REF"
-          echo "Event: $GITHUB_EVENT_NAME"
+          echo "======================================"
+          echo "GitHub Repository"
+          echo "======================================"
+          echo "$GITHUB_REPOSITORY"
+
+          echo "======================================"
+          echo "GitHub Branch"
+          echo "======================================"
+          echo "$GITHUB_REF"
+
+          echo "======================================"
+          echo "GitHub Event"
+          echo "======================================"
+          echo "$GITHUB_EVENT_NAME"
+
+          echo "======================================"
+          echo "AWS Identity"
+          echo "======================================"
 
           aws sts get-caller-identity
 
-      # -----------------------------
-      # Terraform Init
-      # -----------------------------
+      # ==========================================
+      # 5. Terraform Init
+      # ==========================================
       - name: Terraform Init
         run: terraform init
 
-      # -----------------------------
-      # Terraform Format
-      # -----------------------------
-      - name: Terraform Format Check
+      # ==========================================
+      # 6. Terraform Format Check
+      # ==========================================
+      - name: Terraform Format
         run: terraform fmt -check -recursive
 
-      # -----------------------------
-      # Terraform Validate
-      # -----------------------------
+      # ==========================================
+      # 7. Terraform Validate
+      # ==========================================
       - name: Terraform Validate
         run: terraform validate
 
-      # -----------------------------
-      # Terraform Plan
-      # -----------------------------
+      # ==========================================
+      # 8. Terraform Plan
+      # ==========================================
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # -----------------------------
-      # Terraform Apply
-      # -----------------------------
+      # ==========================================
+      # 9. Terraform Apply
+      # ==========================================
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
